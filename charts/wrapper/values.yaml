@@ -1,0 +1,29 @@
+nameOverride: ""
+fullnameOverride: ""
+
+resources:
+  - metadata:
+    #namespace: ""
+    #labels: { }
+    #annotations: { }
+    resources:
+      - apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: app
+          #namespace: ""
+          #labels: { }
+          #annotations: { }
+        spec:
+          replicas: 3
+          selector:
+            matchLabels:
+              app: nginx
+          template:
+            metadata:
+              labels:
+                app: nginx
+            spec:
+              containers:
+                - name: nginx
+                  image: nginx:1.14.2
