@@ -10,12 +10,12 @@ resources:
       - apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: app
+          name: nginx
           #namespace: ""
           #labels: { }
           #annotations: { }
         spec:
-          replicas: 3
+          replicas: 1
           selector:
             matchLabels:
               app: nginx
@@ -30,7 +30,7 @@ resources:
       - apiVersion: v1
         kind: ConfigMap
         metadata:
-          name: game-demo
+          name: config
         data:
           player_initial_lives: "3"
           ui_properties_file_name: "user-interface.properties"
@@ -40,4 +40,20 @@ resources:
           user-interface.properties: |
             color.good=purple
             color.bad=yellow
-            allow.textmode=true    
+            allow.textmode=true
+      - apiVersion: v1
+        kind: Secret
+        metadata:
+          name: string-data
+        type: kubernetes.io/ssh-auth
+        stringData:
+          ssh-privatekey: |
+            -----BEGIN OPENSSH PRIVATE KEY-----
+      - apiVersion: v1
+        kind: Secret
+        metadata:
+          name: data
+        type: kubernetes.io/ssh-auth
+        data:
+          ssh-privatekey: |
+            UG91cmluZzYlRW1vdGljb24lU2N1YmE=
