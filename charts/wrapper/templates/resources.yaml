@@ -1,5 +1,6 @@
 {{- range $grp_key, $grp_val := .Values.resources }}
 {{- range $res_key, $res_val := $grp_val.resources }}
+---
 apiVersion: {{ $res_val.apiVersion }}
 kind: {{ $res_val.kind }}
 metadata:
@@ -11,7 +12,6 @@ metadata:
   {{- else }}
   namespace: {{ $.Release.Namespace }}
   {{- end }}
-  {{- if or (and ($grp_val.metadata) ($grp_val.metadata.labels)) (and ($res_val.metadata) ($res_val.metadata.labels)) }}
   labels:
     {{- if and ($grp_val.metadata) ($grp_val.metadata.labels) }}
     {{- $grp_val.metadata.labels | toYaml | nindent 4 }}
@@ -19,7 +19,7 @@ metadata:
     {{- if and ($res_val.metadata) ($res_val.metadata.labels) }}
     {{- $res_val.metadata.labels | toYaml | nindent 4 }}
     {{- end }}
-  {{- end }}
+    {{- include "wrapper.labels" $ | nindent 4 }}
   {{- if or (and ($grp_val.metadata) ($grp_val.metadata.annotations)) (and ($res_val.metadata) ($res_val.metadata.annotations)) }}
   annotations:
     {{- if and ($grp_val.metadata) ($grp_val.metadata.annotations) }}
@@ -29,13 +29,13 @@ metadata:
     {{- $res_val.metadata.annotations | toYaml | nindent 4 }}
     {{- end }}
   {{- end }}
-{{- if $res_val.spec }}
+{{- with $res_val.spec }}
 spec:
-  {{- with $res_val.spec }}
   {{- toYaml . | nindent 2 }}
-  {{- end }}
-{{- else }}
-spec: { }
+{{- end }}
+{{- with $res_val.data }}
+data:
+  {{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end }}
 {{- end }}
