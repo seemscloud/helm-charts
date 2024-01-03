@@ -3,9 +3,6 @@
 ---
 apiVersion: {{ $res_val.apiVersion }}
 kind: {{ $res_val.kind }}
-{{- if $res_val.type }}
-type: {{ $res_val.type }}
-{{- end }}
 metadata:
   name: {{ include "wrapper.fullname" $ }}-{{ $res_val.metadata.name }}
   {{- if and ($res_val.metadata) ($res_val.metadata.namespace) }}
@@ -32,6 +29,7 @@ metadata:
     {{- $res_val.metadata.annotations | toYaml | nindent 4 }}
     {{- end }}
   {{- end }}
+# Objects
 {{- with $res_val.spec }}
 spec:
   {{- toYaml . | nindent 2 }}
@@ -43,6 +41,17 @@ data:
 {{- with $res_val.stringData }}
 stringData:
   {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with $res_val.parameters }}
+parameters:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+# Key/Value
+{{- if $res_val.provisioner }}
+provisioner: {{ $res_val.provisioner }}
+{{- end }}
+{{- if $res_val.type }}
+type: {{ $res_val.type }}
 {{- end }}
 {{- end }}
 {{- end }}
