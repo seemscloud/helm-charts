@@ -1,0 +1,23 @@
+apiVersion: v2
+name: opensearch-stack
+description: Opensearch Stack
+
+type: application
+
+version: 1.0.0
+
+appVersion: "2.15.0"
+
+dependencies:
+  - name: opensearch
+    version: 2.21.0
+    repository: https://opensearch-project.github.io/helm-charts
+    alias: opensearch-master
+  - name: opensearch
+    version: 2.21.0
+    repository: https://opensearch-project.github.io/helm-charts
+    alias: opensearch-data
+  - name: opensearch-dashboards
+    version: 2.19.0
+    repository: https://opensearch-project.github.io/helm-charts
+    alias: opensearch-dashboards

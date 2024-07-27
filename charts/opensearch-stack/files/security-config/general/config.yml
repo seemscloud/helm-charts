@@ -1,0 +1,72 @@
+---
+_meta:
+  type: "config"
+  config_version: 2
+
+config:
+  dynamic:
+    kibana:
+      multitenancy_enabled: true
+      private_tenant_enabled: false
+      default_tenant: "Global"
+    authc:
+      basic_internal_auth_domain:
+        description: "Authenticate via HTTP Basic against internal users database"
+        http_enabled: true
+        transport_enabled: true
+        order: 0
+        http_authenticator:
+          type: basic
+          challenge: true
+        authentication_backend:
+          type: intern
+      ldap:
+        description: "Authenticate via LDAP or Active Directory"
+        http_enabled: true
+        transport_enabled: true
+        order: 1
+        http_authenticator:
+          type: basic
+          challenge: false
+        authentication_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            enable_start_tls: false
+            enable_ssl_client_auth: false
+            verify_hostnames: false
+            hosts:
+              - 127.0.0.1:3269
+            bind_dn: CN=username,DC=xxxxx,DC=xxxxx,DC=xxxxx,DC=xxx,DC=xx
+            password: password
+            userbase: 'DC=xxxxx,DC=xxxxx,DC=xxxxx,DC=xxx,DC=xx'
+            usersearch: '(sAMAccountName={0})'
+            username_attribute: sAMAccountName
+    authz:
+      ldap_roles:
+        description: "Authorize via LDAP or Active Directory"
+        http_enabled: true
+        transport_enabled: true
+        authorization_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            enable_start_tls: false
+            enable_ssl_client_auth: false
+            verify_hostnames: false
+
+            hosts:
+              - 127.0.0.1:3269
+            bind_dn: CN=username,DC=xxxxx,DC=xxxxx,DC=xxxxx,DC=xxx,DC=xx
+            password: password
+
+            rolebase: 'DC=xxxxx,DC=xxxxx,DC=xxxxx,DC=xxx,DC=xx'
+            rolesearch: '(&(objectClass=group)(|(cn=xxxxx)(cn=xxxxx)))'
+            rolename: cn
+
+            userbase: 'DC=xxxxx,DC=xxxxx,DC=xxxxx,DC=xxx,DC=xx'
+            usersearch: '(sAMAccountName={0})'
+            userroleattribute: null
+
+            userrolename: disabled
+            resolve_nested_roles: false

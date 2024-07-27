@@ -1,0 +1,97 @@
+{{ if and .Values.securityConfig.enabled .Values.securityConfig.create }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "opensearch-stack.fullname" . }}-security-config
+  labels:
+    {{- include "opensearch-stack.labels" $ | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+spec:
+  template:
+    spec:
+      containers:
+        - name: security-config
+          image: {{ .Values.securityConfig.image.registry }}/{{ .Values.securityConfig.image.repository }}:{{ .Values.securityConfig.image.tag }}
+          command: [ "/bin/bash", "-c" ]
+          env:
+            - name: OPENSEARCH_HOST
+              value: "{{ .Values.securityConfig.host }}"
+            - name: OPENSEARCH_PORT
+              value: "{{ .Values.securityConfig.port }}"
+          args:
+            - |
+              read -d "" EXEC_TENANTS <<EndOfMessage
+                /usr/share/opensearch/plugins/opensearch-security/tools/securityadmin.sh \
+                -icl -nhnv -rev -h ${OPENSEARCH_HOST} -p ${OPENSEARCH_PORT} \
+                -cacert config/tls/ca.crt \
+                -cert config/tls/tls.crt -key config/tls/tls.key \
+                -f config/opensearch-security/tenants.yml
+              EndOfMessage
+
+              read -d "" EXEC_REST <<EndOfMessage
+                /usr/share/opensearch/plugins/opensearch-security/tools/securityadmin.sh \
+                -icl -nhnv -rev -h ${OPENSEARCH_HOST} -p ${OPENSEARCH_PORT} \
+                -cacert config/tls/ca.crt \
+                -cert config/tls/tls.crt -key config/tls/tls.key \
+                -cd config/opensearch-security
+              EndOfMessage
+
+              while true; do
+                if timeout 3 /bin/bash -c "echo > /dev/tcp/${OPENSEARCH_HOST}/${OPENSEARCH_PORT}" ; then
+                  eval "${EXEC_TENANTS}" && echo "Security plugin updated.." && break;
+                fi
+                echo "Waiting for port.." && sleep 1;
+              done
+
+              while true; do
+                if timeout 3 /bin/bash -c "echo > /dev/tcp/${OPENSEARCH_HOST}/${OPENSEARCH_PORT}" ; then
+                  eval "${EXEC_REST}" && echo "Security plugin updated.." && break;
+                fi
+                echo "Waiting for port.." && sleep 1;
+              done
+          volumeMounts:
+            - name: admin-tls
+              mountPath: /usr/share/opensearch/config/tls
+            - name: security-config
+              mountPath: /usr/share/opensearch/config/opensearch-security/action_groups.yml
+              subPath: action_groups.yml
+            - name: security-config
+              mountPath: /usr/share/opensearch/config/opensearch-security/config.yml
+              subPath: config.yml
+            - name: security-config
+              mountPath: /usr/share/opensearch/config/opensearch-security/internal_users.yml
+              subPath: internal_users.yml
+            - name: security-config
+              mountPath: /usr/share/opensearch/config/opensearch-security/roles.yml
+              subPath: roles.yml
+            - name: security-config
+              mountPath: /usr/share/opensearch/config/opensearch-security/roles_mapping.yml
+              subPath: roles_mapping.yml
+            - name: security-config
+              mountPath: /usr/share/opensearch/config/opensearch-security/tenants.yml
+              subPath: tenants.yml
+            - name: security-config-adds
+              mountPath: /usr/share/opensearch/config/opensearch-security/allowlist.yml
+              subPath: allowlist.yml
+            - name: security-config-adds
+              mountPath: /usr/share/opensearch/config/opensearch-security/audit.yml
+              subPath: audit.yml
+            - name: security-config-adds
+              mountPath: /usr/share/opensearch/config/opensearch-security/nodes_dn.yml
+              subPath: nodes_dn.yml
+            - name: security-config-adds
+              mountPath: /usr/share/opensearch/config/opensearch-security/whitelist.yml
+              subPath: whitelist.yml
+      volumes:
+        - name: admin-tls
+          secret:
+            secretName: {{ include "opensearch-stack.fullname" $ }}-self-admin-tls
+        - name: security-config
+          secret:
+            secretName: {{ include "opensearch-stack.fullname" . }}-security-config
+        - name: security-config-adds
+          configMap:
+            name: {{ include "opensearch-stack.fullname" . }}-security-config-adds
+      restartPolicy: OnFailure
+{{- end }}

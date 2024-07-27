@@ -1,0 +1,18 @@
+{{ if .Values.securityConfig.create }}
+{{- $securityConfig := printf "%s/%s/%s" "files" "security-config" .Values.securityConfig.env  -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "opensearch-stack.fullname" . }}-security-config-adds
+  labels:
+    {{- include "opensearch-stack.labels" . | nindent 4 }}
+data:
+  allowlist.yml: |-
+    {{- .Files.Get (printf "%s/%s" $securityConfig "allowlist.yml") | nindent 4 }}
+  audit.yml: |-
+    {{- .Files.Get (printf "%s/%s" $securityConfig "audit.yml") | nindent 4 }}
+  nodes_dn.yml: |-
+    {{- .Files.Get (printf "%s/%s" $securityConfig "nodes_dn.yml") | nindent 4 }}
+  whitelist.yml: |-
+    {{- .Files.Get (printf "%s/%s" $securityConfig "whitelist.yml") | nindent 4 }}
+{{- end }}

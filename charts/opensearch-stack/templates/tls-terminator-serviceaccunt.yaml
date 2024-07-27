@@ -1,0 +1,10 @@
+{{- if and .Values.tlsTerminator.enabled .Values.tlsTerminator.serviceAccount.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "opensearch-stack.fullname" . }}-tls-terminator
+  labels:
+    {{- include "opensearch-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tls-terminator
+automountServiceAccountToken: {{ .Values.tlsTerminator.serviceAccount.automount }}
+{{- end }}

@@ -1,0 +1,45 @@
+{{- if .Values.tlsTerminator.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "opensearch-stack.fullname" . }}-tls-terminator
+  labels:
+    {{- include "opensearch-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tls-terminator
+data:
+  default.conf: |
+    server {
+        listen      8080;
+        server_name localhost;
+
+        root        /usr/share/nginx/html;
+        access_log  /var/log/nginx/access.log main;
+
+        proxy_read_timeout      30;
+        proxy_connect_timeout   5;
+        proxy_send_timeout      30;
+        client_max_body_size    100M;
+
+        location ~ ^\/onlyget($|\/$|\/_cat$|\/_cat\/.*) {
+            limit_except GET {
+                allow all;
+            }
+
+            rewrite                         ^/onlyget/_cat/(.*) /_cat/$1    break;
+            rewrite                         ^/onlyget/_cat      /_cat       break;
+            rewrite                         ^/onlyget           /           break;
+
+            proxy_pass                      https://{{ .Values.tlsTerminator.host }}:{{ .Values.tlsTerminator.port }};
+            {{- if .Values.tlsTerminator.basicAuth.enabled }}
+            proxy_set_header Authorization  "Basic {{ printf "%s:%s" .Values.tlsTerminator.basicAuth.user .Values.tlsTerminator.basicAuth.password  | b64enc }}";
+            {{- end }}
+            proxy_ssl_verify                off;
+        }
+
+        error_page 404 /index.html;
+    }
+  index.html: |
+    <center>
+        tls terminator
+    </center>
+{{- end }}

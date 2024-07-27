@@ -1,0 +1,53 @@
+nameOverride: ""
+fullnameOverride: "os-stack"
+
+openshiftScc:
+  - name: anyuid
+    serviceAccount: logstash
+
+securityConfig:
+  env: general
+
+  enabled: true
+  create: true
+
+  image:
+    registry: "docker.io"
+    repository: "opensearchproject/opensearch"
+    tag: "2.15.0"
+
+  host: os-master
+  port: 9200
+
+tlsTerminator:
+  enabled: true
+
+  serviceAccount:
+    enabled: true
+    automount: true
+
+  service:
+    type: LoadBalancer
+    annotatons:
+      cloud.google.com/load-balancer-type: "Internal"
+
+  openshiftScc: false
+
+  host: os-master
+  port: 9200
+
+  basicAuth:
+    enabled: true
+
+    user: admin
+    password: KAwewv8a23bKASe
+
+certManager:
+  enabled: true
+
+  certificates:
+    - name: data-transport
+    - name: data-http
+    - name: master-transport
+    - name: master-http
+    - name: admin

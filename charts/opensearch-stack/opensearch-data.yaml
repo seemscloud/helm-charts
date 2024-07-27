@@ -1,0 +1,162 @@
+opensearch-data:
+  nameOverride: ""
+  fullnameOverride: "os-data"
+
+  clusterName: "okd-gcp-test"
+  nodeGroup: "data"
+
+  masterService: "os-master"
+
+  roles: [ ingest, data ]
+
+  replicas: 2
+
+  maxUnavailable: 100%
+
+  config:
+    log4j2.properties: |
+      status = error
+
+      appender.console.type = Console
+      appender.console.name = console
+      appender.console.layout.type = PatternLayout
+      appender.console.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] [%node_name]%marker %m%n
+
+      rootLogger.level = info
+      rootLogger.appenderRef.console.ref = console
+    opensearch.yml: |
+      network.host: 0.0.0.0
+
+      plugins:
+        security:
+          ssl:
+            transport:
+              pemcert_filepath: tls/transport.crt.pem
+              pemkey_filepath: tls/transport.key.pem
+              pemtrustedcas_filepath: tls/transport-ca.crt.pem
+              enforce_hostname_verification: false
+              #truststore_type: JKS
+              #truststore_filepath: tls/truststore.jks
+              #truststore_alias: alias
+              #truststore_password: password
+            http:
+              enabled: true
+              pemcert_filepath: tls/http.crt.pem
+              pemkey_filepath: tls/http.key.pem
+              pemtrustedcas_filepath: tls/http-ca.crt.pem
+          allow_unsafe_democertificates: false
+          allow_default_init_securityindex: true
+          authcz:
+            admin_dn: [ CN=admin ]
+          nodes_dn: [ CN=data-transport, CN=data-http, CN=master-transport, CN=master-http ]
+          audit.type: internal_opensearch
+          enable_snapshot_restore_privilege: true
+          check_snapshot_restore_write_privileges: true
+          restapi:
+            roles_enabled: ["all_access", "security_rest_api_access"]
+          system_indices:
+            enabled: true
+            indices: [
+              ".plugins-ml-agent", ".plugins-ml-config", ".plugins-ml-connector", ".plugins-ml-controller",
+              ".plugins-ml-model-group", ".plugins-ml-model", ".plugins-ml-task", ".plugins-ml-conversation-meta",
+              ".plugins-ml-conversation-interactions", ".plugins-ml-memory-meta", ".plugins-ml-memory-message",
+              ".plugins-ml-stop-words", ".opendistro-alerting-config", ".opendistro-alerting-alert*",
+              ".opendistro-anomaly-results*", ".opendistro-anomaly-detector*", ".opendistro-anomaly-checkpoints",
+              ".opendistro-anomaly-detection-state", ".opendistro-reports-*", ".opensearch-notifications-*",
+              ".opensearch-notebooks", ".opensearch-observability", ".ql-datasources", 
+              ".opendistro-asynchronous-search-response*", ".replication-metadata-store", ".opensearch-knn-models",
+              ".geospatial-ip2geo-data*", ".plugins-flow-framework-config", ".plugins-flow-framework-templates",
+              ".plugins-flow-framework-state", ".opendistro-notifications-*", ".opendistro-notebooks"
+            ]
+
+  extraEnvs:
+    - name: "DISABLE_INSTALL_DEMO_CONFIG"
+      value: "true"
+
+  secretMounts:
+    - name: http-tls-ca-crt
+      secretName: os-stack-self-master-http-tls
+      path: /usr/share/opensearch/config/tls/http-ca.crt.pem
+      subPath: ca.crt
+    - name: http-tls-crt
+      secretName: os-stack-self-master-http-tls
+      path: /usr/share/opensearch/config/tls/http.crt.pem
+      subPath: tls.crt
+    - name: http-tls-key
+      secretName: os-stack-self-master-http-tls
+      path: /usr/share/opensearch/config/tls/http.key.pem
+      subPath: tls.key
+    - name: transport-tls-ca-crt
+      secretName: os-stack-self-master-transport-tls
+      path: /usr/share/opensearch/config/tls/transport-ca.crt.pem
+      subPath: ca.crt
+    - name: transport-tls-crt
+      secretName: os-stack-self-master-transport-tls
+      path: /usr/share/opensearch/config/tls/transport.crt.pem
+      subPath: tls.crt
+    - name: transport-tls-key
+      secretName: os-stack-self-master-transport-tls
+      path: /usr/share/opensearch/config/tls/transport.key.pem
+      subPath: tls.key
+    - name: admin-tls-ca-crt
+      secretName: os-stack-self-admin-tls
+      path: /usr/share/opensearch/config/tls/admin-ca.crt.pem
+      subPath: ca.crt
+    - name: admin-tls-crt
+      secretName: os-stack-self-admin-tls
+      path: /usr/share/opensearch/config/tls/admin.crt.pem
+      subPath: tls.crt
+    - name: admin-tls-key
+      secretName: os-stack-self-admin-tls
+      path: /usr/share/opensearch/config/tls/admin.key.pem
+      subPath: tls.key
+
+  securityConfig:
+    enabled: true
+    actionGroupsSecret: os-stack-security-config
+    configSecret: os-stack-security-config
+    internalUsersSecret: os-stack-security-config
+    rolesSecret: os-stack-security-config
+    rolesMappingSecret: os-stack-security-config
+    tenantsSecret: os-stack-security-config
+
+  extraVolumes:
+    - name: security-configs-adds
+      configMap:
+        name: os-stack-security-config-adds
+
+  extraVolumeMounts:
+    - name: security-configs-adds
+      mountPath: /usr/share/opensearch/config/opensearch-security/allowlist.yml
+      subPath: allowlist.yml
+      readOnly: true
+    - name: security-configs-adds
+      mountPath: /usr/share/opensearch/config/opensearch-security/audit.yml
+      subPath: audit.yml
+      readOnly: true
+    - name: security-configs-adds
+      mountPath: /usr/share/opensearch/config/opensearch-security/nodes_dn.yml
+      subPath: nodes_dn.yml
+      readOnly: true
+    - name: security-configs-adds
+      mountPath: /usr/share/opensearch/config/opensearch-security/whitelist.yml
+      subPath: whitelist.yml
+      readOnly: true
+
+  opensearchJavaOpts: "-Xmx4g -Xms4g"
+
+  resources:
+    requests:
+      cpu: "1"
+      memory: "9Gi"
+    limits:
+      cpu: "3"
+      memory: "9Gi"
+
+  rbac:
+    automountServiceAccountToken: true
+
+  persistence:
+    size: 256Gi
+
+  terminationGracePeriod: 1

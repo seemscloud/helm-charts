@@ -1,0 +1,23 @@
+{{- if and .Values.tlsTerminator.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "opensearch-stack.fullname" . }}-tls-terminator
+  labels:
+    {{- include "opensearch-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tls-terminator
+  {{- with .Values.tlsTerminator.service.annotatons }}
+  annotations:
+    {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    {{- include "opensearch-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: tls-terminator
+  type: {{ .Values.tlsTerminator.service.type }}
+  {{- end }}

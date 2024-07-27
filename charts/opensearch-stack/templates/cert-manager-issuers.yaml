@@ -1,0 +1,16 @@
+{{- if and .Values.certManager.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "opensearch-stack.fullname" $ }}-self-ca
+spec:
+  selfSigned: { }
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "opensearch-stack.fullname" $ }}-self-leaf
+spec:
+  ca:
+    secretName: {{ include "opensearch-stack.fullname" $ }}-self-ca-tls
+{{- end }}
